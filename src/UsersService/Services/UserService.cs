@@ -1,17 +1,18 @@
 using UsersService.DTOs.Users;
 using UsersService.Entities;
+using UsersService.Exceptions;
 using UsersService.Repositories;
 
 namespace UsersService.Services;
 
 public sealed class UserService(IUserRepository userRepository) : IUserService
 {
-    public async Task<UserResponse?> CreateAsync(CreateUserRequest request)
+    public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
         var existingUser = await userRepository.GetByPhoneAsync(request.Phone);
         if (existingUser is not null)
         {
-            return null;
+            throw new ConflictException("User with this phone already exists.");
         }
 
         var user = new User
@@ -31,11 +32,12 @@ public sealed class UserService(IUserRepository userRepository) : IUserService
         return MapToResponse(user);
     }
 
-    public async Task<UserResponse?> GetByIdAsync(Guid id)
+    public async Task<UserResponse> GetByIdAsync(Guid id)
     {
-        var user = await userRepository.GetByIdAsync(id);
+        var user = await userRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException("User was not found.");
 
-        return user is null ? null : MapToResponse(user);
+        return MapToResponse(user);
     }
 
     public async Task<IReadOnlyList<UserResponse>> GetAllAsync()
@@ -47,18 +49,13 @@ public sealed class UserService(IUserRepository userRepository) : IUserService
             .ToList();
     }
 
-    public async Task<bool> BlockAsync(Guid id)
+    public async Task BlockAsync(Guid id)
     {
-        var user = await userRepository.GetByIdAsync(id);
-        if (user is null)
-        {
-            return false;
-        }
+        var user = await userRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException("User was not found.");
 
         user.IsBlocked = true;
         await userRepository.UpdateAsync(user);
-
-        return true;
     }
 
     private static UserResponse MapToResponse(User user)

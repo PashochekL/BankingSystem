@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using UsersService.Data;
+using UsersService.Middleware;
 using UsersService.Repositories;
 using UsersService.Services;
 
@@ -19,6 +20,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

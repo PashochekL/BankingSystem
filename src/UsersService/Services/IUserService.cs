@@ -4,11 +4,11 @@ namespace UsersService.Services;
 
 public interface IUserService
 {
-    Task<UserResponse?> CreateAsync(CreateUserRequest request);
+    Task<UserResponse> CreateAsync(CreateUserRequest request);
 
-    Task<UserResponse?> GetByIdAsync(Guid id);
+    Task<UserResponse> GetByIdAsync(Guid id);
 
     Task<IReadOnlyList<UserResponse>> GetAllAsync();
 
-    Task<bool> BlockAsync(Guid id);
+    Task BlockAsync(Guid id);
 }

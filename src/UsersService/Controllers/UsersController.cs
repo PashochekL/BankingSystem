@@ -12,10 +12,6 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
     {
         var user = await userService.CreateAsync(request);
-        if (user is null)
-        {
-            return Conflict();
-        }
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
     }
@@ -24,10 +20,6 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> GetById(Guid id)
     {
         var user = await userService.GetByIdAsync(id);
-        if (user is null)
-        {
-            return NotFound();
-        }
 
         return Ok(user);
     }
@@ -43,11 +35,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     [HttpPatch("{id:guid}/block")]
     public async Task<IActionResult> Block(Guid id)
     {
-        var isBlocked = await userService.BlockAsync(id);
-        if (!isBlocked)
-        {
-            return NotFound();
-        }
+        await userService.BlockAsync(id);
 
         return NoContent();
     }

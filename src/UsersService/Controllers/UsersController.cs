@@ -13,6 +13,7 @@ public sealed class UsersController(
     ICurrentUserService currentUserService) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = "Employee")]
     public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
     {
         var user = await userService.CreateAsync(request);
@@ -21,6 +22,7 @@ public sealed class UsersController(
     }
 
     [HttpGet("me")]
+    [Authorize(Roles = "Client,Employee")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)
@@ -42,6 +44,7 @@ public sealed class UsersController(
     }
 
     [HttpGet]
+    [Authorize(Roles = "Employee")]
     public async Task<ActionResult<IReadOnlyList<UserResponse>>> GetAll()
     {
         var users = await userService.GetAllAsync();
@@ -50,6 +53,7 @@ public sealed class UsersController(
     }
 
     [HttpPatch("{id:guid}/block")]
+    [Authorize(Roles = "Employee")]
     public async Task<IActionResult> Block(Guid id)
     {
         await userService.BlockAsync(id);

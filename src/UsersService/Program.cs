@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using UsersService.Data;
 using UsersService.Entities;
 using UsersService.Middleware;
+using UsersService.Options;
 using UsersService.Repositories;
 using UsersService.Services;
 
@@ -17,7 +18,10 @@ builder.Services.AddDbContext<UsersDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

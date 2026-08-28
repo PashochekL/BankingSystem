@@ -8,7 +8,8 @@ namespace UsersService.Services;
 
 public sealed class AuthService(
     IUserRepository userRepository,
-    IPasswordHasher<User> passwordHasher) : IAuthService
+    IPasswordHasher<User> passwordHasher,
+    IJwtService jwtService) : IAuthService
 {
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
@@ -30,6 +31,8 @@ public sealed class AuthService(
             throw new UnauthorizedException("Invalid phone or password.");
         }
 
-        return new LoginResponse(user.Id, user.Phone, user.Role);
+        var accessToken = jwtService.GenerateAccessToken(user);
+
+        return new LoginResponse(user.Id, user.Phone, user.Role, accessToken);
     }
 }

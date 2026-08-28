@@ -27,6 +27,7 @@ builder.Services.AddDbContext<UsersDbContext>(options =>
     options.UseNpgsql(usersDbConnectionString));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();

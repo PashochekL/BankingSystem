@@ -15,4 +15,20 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<LoginResponse>> Refresh(RefreshTokenRequest request)
+    {
+        var response = await authService.RefreshAsync(request);
+
+        return Ok(response);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(LogoutRequest request)
+    {
+        await authService.LogoutAsync(request);
+
+        return NoContent();
+    }
 }

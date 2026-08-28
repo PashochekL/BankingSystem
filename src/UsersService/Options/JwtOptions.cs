@@ -9,4 +9,6 @@ public sealed class JwtOptions
     public string Secret { get; init; } = string.Empty;
 
     public int AccessTokenExpirationMinutes { get; init; } = 15;
+
+    public int RefreshTokenExpirationDays { get; init; } = 30;
 }

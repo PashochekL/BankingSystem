@@ -7,6 +7,8 @@ public sealed class UsersDbContext(DbContextOptions<UsersDbContext> options) : D
 {
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -41,6 +43,31 @@ public sealed class UsersDbContext(DbContextOptions<UsersDbContext> options) : D
 
             entity.Property(user => user.CreatedAt)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+
+            entity.HasKey(refreshToken => refreshToken.Id);
+
+            entity.Property(refreshToken => refreshToken.TokenHash)
+                .HasMaxLength(128)
+                .IsRequired();
+
+            entity.HasIndex(refreshToken => refreshToken.TokenHash)
+                .IsUnique();
+
+            entity.Property(refreshToken => refreshToken.ExpiresAt)
+                .IsRequired();
+
+            entity.Property(refreshToken => refreshToken.CreatedAt)
+                .IsRequired();
+
+            entity.HasOne(refreshToken => refreshToken.User)
+                .WithMany()
+                .HasForeignKey(refreshToken => refreshToken.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

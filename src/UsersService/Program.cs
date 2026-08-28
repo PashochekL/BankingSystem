@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using UsersService.Data;
+using UsersService.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,8 @@ var usersDbConnectionString = builder.Configuration.GetConnectionString("UsersDb
 
 builder.Services.AddDbContext<UsersDbContext>(options =>
     options.UseNpgsql(usersDbConnectionString));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

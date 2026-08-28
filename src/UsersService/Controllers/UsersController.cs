@@ -8,7 +8,9 @@ namespace UsersService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/users")]
-public sealed class UsersController(IUserService userService) : ControllerBase
+public sealed class UsersController(
+    IUserService userService,
+    ICurrentUserService currentUserService) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request)
@@ -16,6 +18,19 @@ public sealed class UsersController(IUserService userService) : ControllerBase
         var user = await userService.CreateAsync(request);
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+    }
+
+    [HttpGet("me")]
+    public async Task<ActionResult<UserResponse>> GetMe()
+    {
+        if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)
+        {
+            return Unauthorized();
+        }
+
+        var user = await userService.GetByIdAsync(userId);
+
+        return Ok(user);
     }
 
     [HttpGet("{id:guid}")]

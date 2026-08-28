@@ -1,6 +1,7 @@
 using System.Text;
 using AccountsService.Data;
 using AccountsService.Options;
+using AccountsService.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +21,8 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
 
 builder.Services.AddDbContext<AccountsDbContext>(options =>
     options.UseNpgsql(accountsDbConnectionString));
+
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

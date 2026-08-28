@@ -11,5 +11,18 @@ services:
     volumes:
       - users-db-data:/var/lib/postgresql/data
 
+  accounts-db:
+    image: postgres:16
+    container_name: krutobank-accounts-db
+    environment:
+      POSTGRES_DB: kruto_accounts
+      POSTGRES_USER: kruto_accounts
+      POSTGRES_PASSWORD: kruto_accounts_password
+    ports:
+      - "54322:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+
 volumes:
   users-db-data:
+  accounts-db-data:

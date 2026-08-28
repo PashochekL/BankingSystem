@@ -1,5 +1,6 @@
 using AccountsService.Data;
 using AccountsService.Entities;
+using AccountsService.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccountsService.Repositories;
@@ -39,19 +40,19 @@ public sealed class AccountRepository(AccountsDbContext dbContext) : IAccountRep
     public async Task AddAsync(Account account)
     {
         await dbContext.Accounts.AddAsync(account);
-        await dbContext.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Account account)
     {
         dbContext.Accounts.Update(account);
-        await dbContext.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task AddOperationAsync(AccountOperation operation)
     {
         await dbContext.AccountOperations.AddAsync(operation);
-        await dbContext.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task<IReadOnlyList<AccountOperation>> GetOperationsAsync(Guid accountId, int page, int pageSize)
@@ -63,5 +64,17 @@ public sealed class AccountRepository(AccountsDbContext dbContext) : IAccountRep
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+    }
+
+    private async Task SaveChangesAsync()
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException("Account was changed by another operation. Try again.", exception);
+        }
     }
 }

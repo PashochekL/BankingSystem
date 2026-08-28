@@ -1,4 +1,5 @@
 using AccountsService.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountsService.Middleware;
@@ -41,6 +42,8 @@ public sealed class ExceptionHandlingMiddleware(
             ValidationException => StatusCodes.Status400BadRequest,
             UnauthorizedException => StatusCodes.Status401Unauthorized,
             NotFoundException => StatusCodes.Status404NotFound,
+            ConflictException => StatusCodes.Status409Conflict,
+            DbUpdateConcurrencyException => StatusCodes.Status409Conflict,
             ForbiddenException => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError
         };
@@ -50,6 +53,8 @@ public sealed class ExceptionHandlingMiddleware(
             ValidationException => "Validation failed",
             UnauthorizedException => "Unauthorized",
             NotFoundException => "Resource not found",
+            ConflictException => "Conflict",
+            DbUpdateConcurrencyException => "Conflict",
             ForbiddenException => "Forbidden",
             _ => "Unexpected error"
         };

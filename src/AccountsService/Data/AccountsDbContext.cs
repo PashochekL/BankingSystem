@@ -17,6 +17,9 @@ public sealed class AccountsDbContext(DbContextOptions<AccountsDbContext> option
 
             entity.HasKey(account => account.Id);
 
+            entity.Property<uint>("xmin")
+                .IsRowVersion();
+
             entity.Property(account => account.Name)
                 .HasMaxLength(100)
                 .IsRequired();

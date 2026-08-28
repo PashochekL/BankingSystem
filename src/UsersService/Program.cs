@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UsersService.Data;
+using UsersService.Entities;
 using UsersService.Middleware;
 using UsersService.Repositories;
 using UsersService.Services;
@@ -14,6 +16,7 @@ builder.Services.AddDbContext<UsersDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

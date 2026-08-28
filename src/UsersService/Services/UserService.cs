@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using UsersService.DTOs.Users;
 using UsersService.Entities;
 using UsersService.Exceptions;
@@ -5,7 +6,9 @@ using UsersService.Repositories;
 
 namespace UsersService.Services;
 
-public sealed class UserService(IUserRepository userRepository) : IUserService
+public sealed class UserService(
+    IUserRepository userRepository,
+    IPasswordHasher<User> passwordHasher) : IUserService
 {
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
@@ -21,11 +24,12 @@ public sealed class UserService(IUserRepository userRepository) : IUserService
             FirstName = request.FirstName,
             LastName = request.LastName,
             Phone = request.Phone,
-            PasswordHash = request.PasswordHash,
             Role = request.Role,
             IsBlocked = false,
             CreatedAt = DateTimeOffset.UtcNow
         };
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
         await userRepository.AddAsync(user);
 

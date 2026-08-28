@@ -15,4 +15,6 @@ public interface IAccountService
     Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request);
 
     Task<AccountResponse> WithdrawAsync(Guid id, AccountAmountRequest request);
+
+    Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize);
 }

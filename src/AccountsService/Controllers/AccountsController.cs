@@ -57,4 +57,15 @@ public sealed class AccountsController(IAccountService accountService) : Control
 
         return Ok(account);
     }
+
+    [HttpGet("{id:guid}/operations")]
+    public async Task<ActionResult<IReadOnlyList<AccountOperationResponse>>> GetOperations(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var operations = await accountService.GetOperationsAsync(id, page, pageSize);
+
+        return Ok(operations);
+    }
 }

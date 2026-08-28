@@ -135,6 +135,30 @@ public sealed class AccountService(
         return MapToResponse(account);
     }
 
+    public async Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
+    {
+        if (page <= 0)
+        {
+            throw new ValidationException("Page must be greater than zero.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ValidationException("Page size must be greater than zero.");
+        }
+
+        var account = await accountRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException("Account was not found.");
+
+        EnsureCanAccess(account);
+
+        var operations = await accountRepository.GetOperationsAsync(id, page, pageSize);
+
+        return operations
+            .Select(MapToOperationResponse)
+            .ToList();
+    }
+
     private Guid GetCurrentUserId()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)
@@ -164,5 +188,15 @@ public sealed class AccountService(
             account.IsClosed,
             account.CreatedAt,
             account.ClosedAt);
+    }
+
+    private static AccountOperationResponse MapToOperationResponse(AccountOperation operation)
+    {
+        return new AccountOperationResponse(
+            operation.Id,
+            operation.AccountId,
+            operation.Type,
+            operation.Amount,
+            operation.CreatedAt);
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AccountsService.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Client,Employee")]
 [Route("api/accounts")]
 public sealed class AccountsController(IAccountService accountService) : ControllerBase
 {

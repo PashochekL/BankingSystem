@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UsersService.DTOs.Users;
 using UsersService.Services;
@@ -5,6 +6,7 @@ using UsersService.Services;
 namespace UsersService.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/users")]
 public sealed class UsersController(IUserService userService) : ControllerBase
 {

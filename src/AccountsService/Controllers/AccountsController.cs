@@ -1,0 +1,44 @@
+using AccountsService.DTOs.Accounts;
+using AccountsService.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AccountsService.Controllers;
+
+[ApiController]
+[Authorize]
+[Route("api/accounts")]
+public sealed class AccountsController(IAccountService accountService) : ControllerBase
+{
+    [HttpPost]
+    public async Task<ActionResult<AccountResponse>> Create(CreateAccountRequest request)
+    {
+        var account = await accountService.CreateAsync(request);
+
+        return CreatedAtAction(nameof(GetById), new { id = account.Id }, account);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAll()
+    {
+        var accounts = await accountService.GetAllAsync();
+
+        return Ok(accounts);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<AccountResponse>> GetById(Guid id)
+    {
+        var account = await accountService.GetByIdAsync(id);
+
+        return Ok(account);
+    }
+
+    [HttpPost("{id:guid}/close")]
+    public async Task<IActionResult> Close(Guid id)
+    {
+        await accountService.CloseAsync(id);
+
+        return NoContent();
+    }
+}

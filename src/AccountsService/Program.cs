@@ -1,7 +1,9 @@
 using System.Text;
 using AccountsService.Data;
+using AccountsService.Middleware;
 using AccountsService.Options;
 using AccountsService.Repositories;
+using AccountsService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,6 +25,9 @@ builder.Services.AddDbContext<AccountsDbContext>(options =>
     options.UseNpgsql(accountsDbConnectionString));
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -51,6 +56,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

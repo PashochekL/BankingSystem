@@ -1,1 +1,15 @@
-services: {}
+services:
+  users-db:
+    image: postgres:16
+    container_name: krutobank-users-db
+    environment:
+      POSTGRES_DB: kruto_users
+      POSTGRES_USER: kruto_users
+      POSTGRES_PASSWORD: kruto_users_password
+    ports:
+      - "54321:5432"
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+
+volumes:
+  users-db-data:

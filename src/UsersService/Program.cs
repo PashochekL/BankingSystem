@@ -1,4 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+using UsersService.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+var usersDbConnectionString = builder.Configuration.GetConnectionString("UsersDb")
+    ?? throw new InvalidOperationException("Connection string 'UsersDb' is not configured.");
+
+builder.Services.AddDbContext<UsersDbContext>(options =>
+    options.UseNpgsql(usersDbConnectionString));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

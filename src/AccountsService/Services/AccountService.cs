@@ -68,6 +68,37 @@ public sealed class AccountService(
         }
     }
 
+    public async Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request)
+    {
+        if (request.Amount <= 0)
+        {
+            throw new ValidationException("Amount must be greater than zero.");
+        }
+
+        var account = await accountRepository.GetByIdForUpdateAsync(id)
+            ?? throw new NotFoundException("Account was not found.");
+
+        EnsureCanAccess(account);
+
+        if (account.IsClosed)
+        {
+            throw new ValidationException("Account is closed.");
+        }
+
+        account.Balance += request.Amount;
+
+        await accountRepository.AddOperationAsync(new AccountOperation
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Type = AccountOperationType.Deposit,
+            Amount = request.Amount,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        return MapToResponse(account);
+    }
+
     private Guid GetCurrentUserId()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)

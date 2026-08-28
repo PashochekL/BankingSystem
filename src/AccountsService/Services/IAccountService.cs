@@ -11,4 +11,6 @@ public interface IAccountService
     Task<AccountResponse> GetByIdAsync(Guid id);
 
     Task CloseAsync(Guid id);
+
+    Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request);
 }

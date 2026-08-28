@@ -41,4 +41,12 @@ public sealed class AccountsController(IAccountService accountService) : Control
 
         return NoContent();
     }
+
+    [HttpPost("{id:guid}/deposit")]
+    public async Task<ActionResult<AccountResponse>> Deposit(Guid id, AccountAmountRequest request)
+    {
+        var account = await accountService.DepositAsync(id, request);
+
+        return Ok(account);
+    }
 }

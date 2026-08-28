@@ -49,4 +49,12 @@ public sealed class AccountsController(IAccountService accountService) : Control
 
         return Ok(account);
     }
+
+    [HttpPost("{id:guid}/withdraw")]
+    public async Task<ActionResult<AccountResponse>> Withdraw(Guid id, AccountAmountRequest request)
+    {
+        var account = await accountService.WithdrawAsync(id, request);
+
+        return Ok(account);
+    }
 }

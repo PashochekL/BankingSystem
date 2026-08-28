@@ -1,0 +1,6 @@
+@CreditsService_HostAddress = http://localhost:5239
+
+GET {{CreditsService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -39,6 +39,7 @@ public sealed class ExceptionHandlingMiddleware(
         var statusCode = exception switch
         {
             ValidationException => StatusCodes.Status400BadRequest,
+            UnauthorizedException => StatusCodes.Status401Unauthorized,
             NotFoundException => StatusCodes.Status404NotFound,
             ConflictException => StatusCodes.Status409Conflict,
             ForbiddenException => StatusCodes.Status403Forbidden,
@@ -48,6 +49,7 @@ public sealed class ExceptionHandlingMiddleware(
         var title = exception switch
         {
             ValidationException => "Validation failed",
+            UnauthorizedException => "Unauthorized",
             NotFoundException => "Resource not found",
             ConflictException => "Conflict",
             ForbiddenException => "Forbidden",

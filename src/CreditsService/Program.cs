@@ -30,6 +30,9 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
 builder.Services.AddDbContext<CreditsDbContext>(options =>
     options.UseNpgsql(creditsDbConnectionString));
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<CreditsDbContext>();
+
 builder.Services.AddScoped<ICreditRepository, CreditRepository>();
 builder.Services.AddScoped<ICreditTariffRepository, CreditTariffRepository>();
 builder.Services.AddScoped<ICreditService, CreditService>();
@@ -86,6 +89,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 RecurringJob.AddOrUpdate<IInterestAccrualJob>(
     "interest-accrual",

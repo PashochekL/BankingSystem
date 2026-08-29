@@ -26,6 +26,9 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
 builder.Services.AddDbContext<UsersDbContext>(options =>
     options.UseNpgsql(usersDbConnectionString));
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<UsersDbContext>();
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -79,5 +82,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

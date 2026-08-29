@@ -35,7 +35,20 @@ services:
     volumes:
       - credits-db-data:/var/lib/postgresql/data
 
+  hangfire-db:
+    image: postgres:16
+    container_name: krutobank-hangfire-db
+    environment:
+      POSTGRES_DB: kruto_hangfire
+      POSTGRES_USER: kruto_hangfire
+      POSTGRES_PASSWORD: kruto_hangfire_password
+    ports:
+      - "54324:5432"
+    volumes:
+      - hangfire-db-data:/var/lib/postgresql/data
+
 volumes:
   users-db-data:
   accounts-db-data:
   credits-db-data:
+  hangfire-db-data:

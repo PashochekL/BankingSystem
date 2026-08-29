@@ -1,9 +1,12 @@
 using System.Text;
 using CreditsService.Data;
+using CreditsService.Jobs;
 using CreditsService.Middleware;
 using CreditsService.Options;
 using CreditsService.Repositories;
 using CreditsService.Services;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var creditsDbConnectionString = builder.Configuration.GetConnectionString("CreditsDb")
     ?? throw new InvalidOperationException("Connection string 'CreditsDb' is not configured.");
+
+var hangfireDbConnectionString = builder.Configuration.GetConnectionString("HangfireDb")
+    ?? throw new InvalidOperationException("Connection string 'HangfireDb' is not configured.");
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT options are not configured.");
@@ -29,7 +35,14 @@ builder.Services.AddScoped<ICreditTariffRepository, CreditTariffRepository>();
 builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddScoped<ICreditTariffService, CreditTariffService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IInterestAccrualJob, InterestAccrualJob>();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHangfire(configuration =>
+    configuration.UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(hangfireDbConnectionString)));
+
+builder.Services.AddHangfireServer();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

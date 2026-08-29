@@ -1,5 +1,6 @@
 using CreditsService.Data;
 using CreditsService.Entities;
+using CreditsService.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CreditsService.Repositories;
@@ -50,13 +51,19 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
     {
         await dbContext.Credits.AddAsync(credit);
         await dbContext.CreditOperations.AddAsync(operation);
-        await dbContext.SaveChangesAsync();
+        await SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(Credit credit)
+    {
+        dbContext.Credits.Update(credit);
+        await SaveChangesAsync();
     }
 
     public async Task AddOperationAsync(CreditOperation operation)
     {
         await dbContext.CreditOperations.AddAsync(operation);
-        await dbContext.SaveChangesAsync();
+        await SaveChangesAsync();
     }
 
     public async Task<IReadOnlyList<CreditOperation>> GetOperationsAsync(Guid creditId, int page, int pageSize)
@@ -68,5 +75,17 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+    }
+
+    private async Task SaveChangesAsync()
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException("Credit was changed by another operation. Try again.", exception);
+        }
     }
 }

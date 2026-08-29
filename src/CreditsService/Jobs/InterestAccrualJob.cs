@@ -1,10 +1,13 @@
 using CreditsService.Entities;
+using CreditsService.Exceptions;
 using CreditsService.Repositories;
+using Hangfire;
 
 namespace CreditsService.Jobs;
 
 public sealed class InterestAccrualJob(ICreditRepository creditRepository) : IInterestAccrualJob
 {
+    [DisableConcurrentExecution(timeoutInSeconds: 3600)]
     public async Task RunAsync()
     {
         var now = DateTimeOffset.UtcNow;
@@ -24,22 +27,31 @@ public sealed class InterestAccrualJob(ICreditRepository creditRepository) : IIn
                 2,
                 MidpointRounding.AwayFromZero);
 
-            if (interest <= 0)
+            credit.LastInterestAccrualAt = accrualDate;
+
+            try
+            {
+                if (interest <= 0)
+                {
+                    await creditRepository.UpdateAsync(credit);
+                    continue;
+                }
+
+                credit.RemainingAmount += interest;
+
+                await creditRepository.AddOperationAsync(new CreditOperation
+                {
+                    Id = Guid.NewGuid(),
+                    CreditId = credit.Id,
+                    Type = CreditOperationType.InterestAccrual,
+                    Amount = interest,
+                    CreatedAt = now
+                });
+            }
+            catch (ConflictException)
             {
                 continue;
             }
-
-            credit.RemainingAmount += interest;
-            credit.LastInterestAccrualAt = accrualDate;
-
-            await creditRepository.AddOperationAsync(new CreditOperation
-            {
-                Id = Guid.NewGuid(),
-                CreditId = credit.Id,
-                Type = CreditOperationType.InterestAccrual,
-                Amount = interest,
-                CreatedAt = now
-            });
         }
     }
 }

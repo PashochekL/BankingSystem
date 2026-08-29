@@ -37,6 +37,9 @@ public sealed class CreditsDbContext(DbContextOptions<CreditsDbContext> options)
 
             entity.HasKey(credit => credit.Id);
 
+            entity.Property<uint>("xmin")
+                .IsRowVersion();
+
             entity.Property(credit => credit.InitialAmount)
                 .HasPrecision(18, 2)
                 .IsRequired();

@@ -33,4 +33,12 @@ public sealed class CreditsController(ICreditService creditService) : Controller
 
         return Ok(credit);
     }
+
+    [HttpPost("{id:guid}/repay")]
+    public async Task<ActionResult<CreditResponse>> Repay(Guid id, RepayCreditRequest request)
+    {
+        var credit = await creditService.RepayAsync(id, request);
+
+        return Ok(credit);
+    }
 }

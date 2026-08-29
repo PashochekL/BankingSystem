@@ -13,6 +13,12 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
             .FirstOrDefaultAsync(credit => credit.Id == id);
     }
 
+    public async Task<Credit?> GetByIdForUpdateAsync(Guid id)
+    {
+        return await dbContext.Credits
+            .FirstOrDefaultAsync(credit => credit.Id == id);
+    }
+
     public async Task<IReadOnlyList<Credit>> GetAllAsync()
     {
         return await dbContext.Credits
@@ -33,6 +39,12 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
     public async Task AddAsync(Credit credit, CreditOperation operation)
     {
         await dbContext.Credits.AddAsync(credit);
+        await dbContext.CreditOperations.AddAsync(operation);
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task AddOperationAsync(CreditOperation operation)
+    {
         await dbContext.CreditOperations.AddAsync(operation);
         await dbContext.SaveChangesAsync();
     }

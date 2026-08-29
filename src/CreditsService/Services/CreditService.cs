@@ -76,6 +76,47 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
+    public async Task<CreditResponse> RepayAsync(Guid id, RepayCreditRequest request)
+    {
+        if (request.Amount <= 0)
+        {
+            throw new ValidationException("Amount must be greater than zero.");
+        }
+
+        var credit = await creditRepository.GetByIdForUpdateAsync(id)
+            ?? throw new NotFoundException("Credit was not found.");
+
+        EnsureCanAccess(credit);
+
+        if (credit.Status != CreditStatus.Active)
+        {
+            throw new ValidationException("Credit is not active.");
+        }
+
+        if (request.Amount > credit.RemainingAmount)
+        {
+            throw new ValidationException("Repayment amount must not exceed remaining amount.");
+        }
+
+        credit.RemainingAmount -= request.Amount;
+
+        if (credit.RemainingAmount == 0)
+        {
+            credit.Status = CreditStatus.Paid;
+        }
+
+        await creditRepository.AddOperationAsync(new CreditOperation
+        {
+            Id = Guid.NewGuid(),
+            CreditId = credit.Id,
+            Type = CreditOperationType.Repayment,
+            Amount = request.Amount,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        return MapToResponse(credit);
+    }
+
     private Guid GetCurrentUserId()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)

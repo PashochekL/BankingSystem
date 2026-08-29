@@ -1,6 +1,9 @@
 using System.Text;
 using CreditsService.Data;
+using CreditsService.Middleware;
 using CreditsService.Options;
+using CreditsService.Repositories;
+using CreditsService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +23,9 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
 
 builder.Services.AddDbContext<CreditsDbContext>(options =>
     options.UseNpgsql(creditsDbConnectionString));
+
+builder.Services.AddScoped<ICreditTariffRepository, CreditTariffRepository>();
+builder.Services.AddScoped<ICreditTariffService, CreditTariffService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -48,6 +54,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

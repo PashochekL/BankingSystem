@@ -40,6 +40,7 @@ public sealed class ExceptionHandlingMiddleware(
         var statusCode = exception switch
         {
             ValidationException => StatusCodes.Status400BadRequest,
+            UnauthorizedException => StatusCodes.Status401Unauthorized,
             NotFoundException => StatusCodes.Status404NotFound,
             DbUpdateConcurrencyException => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status500InternalServerError
@@ -48,6 +49,7 @@ public sealed class ExceptionHandlingMiddleware(
         var title = exception switch
         {
             ValidationException => "Validation failed",
+            UnauthorizedException => "Unauthorized",
             NotFoundException => "Resource not found",
             DbUpdateConcurrencyException => "Conflict",
             _ => "Unexpected error"

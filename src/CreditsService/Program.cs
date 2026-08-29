@@ -24,8 +24,12 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
 builder.Services.AddDbContext<CreditsDbContext>(options =>
     options.UseNpgsql(creditsDbConnectionString));
 
+builder.Services.AddScoped<ICreditRepository, CreditRepository>();
 builder.Services.AddScoped<ICreditTariffRepository, CreditTariffRepository>();
+builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddScoped<ICreditTariffService, CreditTariffService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -15,4 +15,6 @@ public interface ICreditRepository
     Task AddAsync(Credit credit, CreditOperation operation);
 
     Task AddOperationAsync(CreditOperation operation);
+
+    Task<IReadOnlyList<CreditOperation>> GetOperationsAsync(Guid creditId, int page, int pageSize);
 }

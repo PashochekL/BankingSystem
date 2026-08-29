@@ -117,6 +117,30 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
+    public async Task<IReadOnlyList<CreditOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
+    {
+        if (page <= 0)
+        {
+            throw new ValidationException("Page must be greater than zero.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ValidationException("Page size must be greater than zero.");
+        }
+
+        var credit = await creditRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException("Credit was not found.");
+
+        EnsureCanAccess(credit);
+
+        var operations = await creditRepository.GetOperationsAsync(id, page, pageSize);
+
+        return operations
+            .Select(MapToOperationResponse)
+            .ToList();
+    }
+
     private Guid GetCurrentUserId()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)
@@ -148,5 +172,15 @@ public sealed class CreditService(
             credit.CreatedAt,
             credit.LastInterestAccrualAt,
             credit.Status);
+    }
+
+    private static CreditOperationResponse MapToOperationResponse(CreditOperation operation)
+    {
+        return new CreditOperationResponse(
+            operation.Id,
+            operation.CreditId,
+            operation.Type,
+            operation.Amount,
+            operation.CreatedAt);
     }
 }

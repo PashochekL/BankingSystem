@@ -11,4 +11,6 @@ public interface ICreditService
     Task<CreditResponse> GetByIdAsync(Guid id);
 
     Task<CreditResponse> RepayAsync(Guid id, RepayCreditRequest request);
+
+    Task<IReadOnlyList<CreditOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize);
 }

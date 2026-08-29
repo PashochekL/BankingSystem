@@ -48,4 +48,15 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
         await dbContext.CreditOperations.AddAsync(operation);
         await dbContext.SaveChangesAsync();
     }
+
+    public async Task<IReadOnlyList<CreditOperation>> GetOperationsAsync(Guid creditId, int page, int pageSize)
+    {
+        return await dbContext.CreditOperations
+            .AsNoTracking()
+            .Where(operation => operation.CreditId == creditId)
+            .OrderByDescending(operation => operation.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 }

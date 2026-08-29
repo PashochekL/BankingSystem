@@ -41,4 +41,15 @@ public sealed class CreditsController(ICreditService creditService) : Controller
 
         return Ok(credit);
     }
+
+    [HttpGet("{id:guid}/operations")]
+    public async Task<ActionResult<IReadOnlyList<CreditOperationResponse>>> GetOperations(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var operations = await creditService.GetOperationsAsync(id, page, pageSize);
+
+        return Ok(operations);
+    }
 }

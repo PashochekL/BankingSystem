@@ -12,7 +12,14 @@ public sealed class UserService(
 {
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
-        var existingUser = await userRepository.GetByPhoneAsync(request.Phone);
+        UserRequestValidation.ValidateName(request.FirstName, "First name");
+        UserRequestValidation.ValidateName(request.LastName, "Last name");
+        UserRequestValidation.ValidatePhone(request.Phone);
+        UserRequestValidation.ValidatePassword(request.Password);
+        UserRequestValidation.ValidateRole(request.Role);
+
+        var phone = request.Phone.Trim();
+        var existingUser = await userRepository.GetByPhoneAsync(phone);
         if (existingUser is not null)
         {
             throw new ConflictException("User with this phone already exists.");
@@ -21,9 +28,9 @@ public sealed class UserService(
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Phone = request.Phone,
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
+            Phone = phone,
             Role = request.Role,
             IsBlocked = false,
             CreatedAt = DateTimeOffset.UtcNow

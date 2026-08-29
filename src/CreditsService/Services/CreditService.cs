@@ -12,10 +12,7 @@ public sealed class CreditService(
 {
     public async Task<CreditResponse> CreateAsync(CreateCreditRequest request)
     {
-        if (request.Amount <= 0)
-        {
-            throw new ValidationException("Amount must be greater than zero.");
-        }
+        ValidateAmount(request.Amount);
 
         var currentUserId = GetCurrentUserId();
         var tariff = await creditTariffRepository.GetByIdAsync(request.TariffId)
@@ -78,10 +75,7 @@ public sealed class CreditService(
 
     public async Task<CreditResponse> RepayAsync(Guid id, RepayCreditRequest request)
     {
-        if (request.Amount <= 0)
-        {
-            throw new ValidationException("Amount must be greater than zero.");
-        }
+        ValidateAmount(request.Amount);
 
         var credit = await creditRepository.GetByIdForUpdateAsync(id)
             ?? throw new NotFoundException("Credit was not found.");
@@ -119,15 +113,7 @@ public sealed class CreditService(
 
     public async Task<IReadOnlyList<CreditOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
     {
-        if (page <= 0)
-        {
-            throw new ValidationException("Page must be greater than zero.");
-        }
-
-        if (pageSize <= 0)
-        {
-            throw new ValidationException("Page size must be greater than zero.");
-        }
+        ValidatePagination(page, pageSize);
 
         var credit = await creditRepository.GetByIdAsync(id)
             ?? throw new NotFoundException("Credit was not found.");
@@ -139,6 +125,42 @@ public sealed class CreditService(
         return operations
             .Select(MapToOperationResponse)
             .ToList();
+    }
+
+    private static void ValidateAmount(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ValidationException("Amount must be greater than zero.");
+        }
+
+        if (amount > 9999999999999999.99m)
+        {
+            throw new ValidationException("Amount is too large.");
+        }
+
+        if (decimal.Round(amount, 2) != amount)
+        {
+            throw new ValidationException("Amount must not have more than 2 decimal places.");
+        }
+    }
+
+    private static void ValidatePagination(int page, int pageSize)
+    {
+        if (page <= 0)
+        {
+            throw new ValidationException("Page must be greater than zero.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ValidationException("Page size must be greater than zero.");
+        }
+
+        if (pageSize > 100)
+        {
+            throw new ValidationException("Page size must not exceed 100.");
+        }
     }
 
     private Guid GetCurrentUserId()

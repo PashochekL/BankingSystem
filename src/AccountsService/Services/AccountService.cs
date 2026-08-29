@@ -11,6 +11,8 @@ public sealed class AccountService(
 {
     public async Task<AccountResponse> CreateAsync(CreateAccountRequest request)
     {
+        ValidateName(request.Name);
+
         var currentUserId = GetCurrentUserId();
         var accountUserId = currentUserService.IsEmployee && request.UserId.HasValue
             ? request.UserId.Value
@@ -20,7 +22,7 @@ public sealed class AccountService(
         {
             Id = Guid.NewGuid(),
             UserId = accountUserId,
-            Name = request.Name,
+            Name = request.Name.Trim(),
             Balance = 0,
             IsClosed = false,
             CreatedAt = DateTimeOffset.UtcNow
@@ -70,10 +72,7 @@ public sealed class AccountService(
 
     public async Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request)
     {
-        if (request.Amount <= 0)
-        {
-            throw new ValidationException("Amount must be greater than zero.");
-        }
+        ValidateAmount(request.Amount);
 
         var account = await accountRepository.GetByIdForUpdateAsync(id)
             ?? throw new NotFoundException("Account was not found.");
@@ -101,10 +100,7 @@ public sealed class AccountService(
 
     public async Task<AccountResponse> WithdrawAsync(Guid id, AccountAmountRequest request)
     {
-        if (request.Amount <= 0)
-        {
-            throw new ValidationException("Amount must be greater than zero.");
-        }
+        ValidateAmount(request.Amount);
 
         var account = await accountRepository.GetByIdForUpdateAsync(id)
             ?? throw new NotFoundException("Account was not found.");
@@ -137,15 +133,7 @@ public sealed class AccountService(
 
     public async Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
     {
-        if (page <= 0)
-        {
-            throw new ValidationException("Page must be greater than zero.");
-        }
-
-        if (pageSize <= 0)
-        {
-            throw new ValidationException("Page size must be greater than zero.");
-        }
+        ValidatePagination(page, pageSize);
 
         var account = await accountRepository.GetByIdAsync(id)
             ?? throw new NotFoundException("Account was not found.");
@@ -157,6 +145,57 @@ public sealed class AccountService(
         return operations
             .Select(MapToOperationResponse)
             .ToList();
+    }
+
+    private static void ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ValidationException("Name is required.");
+        }
+
+        var trimmedName = name.Trim();
+
+        if (trimmedName.Length > 100)
+        {
+            throw new ValidationException("Name must not exceed 100 characters.");
+        }
+    }
+
+    private static void ValidateAmount(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ValidationException("Amount must be greater than zero.");
+        }
+
+        if (amount > 9999999999999999.99m)
+        {
+            throw new ValidationException("Amount is too large.");
+        }
+
+        if (decimal.Round(amount, 2) != amount)
+        {
+            throw new ValidationException("Amount must not have more than 2 decimal places.");
+        }
+    }
+
+    private static void ValidatePagination(int page, int pageSize)
+    {
+        if (page <= 0)
+        {
+            throw new ValidationException("Page must be greater than zero.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ValidationException("Page size must be greater than zero.");
+        }
+
+        if (pageSize > 100)
+        {
+            throw new ValidationException("Page size must not exceed 100.");
+        }
     }
 
     private Guid GetCurrentUserId()

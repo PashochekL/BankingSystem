@@ -72,12 +72,12 @@ public sealed class CreditTariffService(ICreditTariffRepository creditTariffRepo
 
     private static void ValidateName(string name)
     {
-        var trimmedName = name.Trim();
-
-        if (string.IsNullOrWhiteSpace(trimmedName))
+        if (string.IsNullOrWhiteSpace(name))
         {
             throw new ValidationException("Name is required.");
         }
+
+        var trimmedName = name.Trim();
 
         if (trimmedName.Length > 100)
         {
@@ -95,6 +95,11 @@ public sealed class CreditTariffService(ICreditTariffRepository creditTariffRepo
         if (interestRate > 999.99m)
         {
             throw new ValidationException("Interest rate must not exceed 999.99.");
+        }
+
+        if (decimal.Round(interestRate, 2) != interestRate)
+        {
+            throw new ValidationException("Interest rate must not have more than 2 decimal places.");
         }
     }
 

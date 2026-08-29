@@ -19,7 +19,10 @@ public sealed class AuthService(
 {
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
-        var user = await userRepository.GetByPhoneAsync(request.Phone)
+        UserRequestValidation.ValidatePhone(request.Phone);
+        UserRequestValidation.ValidateLoginPassword(request.Password);
+
+        var user = await userRepository.GetByPhoneAsync(request.Phone.Trim())
             ?? throw new UnauthorizedException("Invalid phone or password.");
 
         if (user.IsBlocked)
@@ -45,6 +48,8 @@ public sealed class AuthService(
 
     public async Task<LoginResponse> RefreshAsync(RefreshTokenRequest request)
     {
+        UserRequestValidation.ValidateRefreshToken(request.RefreshToken);
+
         var refreshTokenHash = HashRefreshToken(request.RefreshToken);
         var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash)
             ?? throw new UnauthorizedException("Invalid refresh token.");
@@ -75,6 +80,8 @@ public sealed class AuthService(
 
     public async Task LogoutAsync(LogoutRequest request)
     {
+        UserRequestValidation.ValidateRefreshToken(request.RefreshToken);
+
         var refreshTokenHash = HashRefreshToken(request.RefreshToken);
         var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash)
             ?? throw new UnauthorizedException("Invalid refresh token.");

@@ -11,12 +11,12 @@ public sealed class CreditService(
     ICurrentUserService currentUserService,
     ILogger<CreditService> logger) : ICreditService
 {
-    public async Task<CreditResponse> CreateAsync(CreateCreditRequest request)
+    public async Task<CreditResponse> CreateAsync(CreateCreditRequest request, CancellationToken cancellationToken)
     {
         ValidateAmount(request.Amount);
 
         var currentUserId = GetCurrentUserId();
-        var tariff = await creditTariffRepository.GetByIdAsync(request.TariffId)
+        var tariff = await creditTariffRepository.GetByIdAsync(request.TariffId, cancellationToken)
             ?? throw new NotFoundException("Credit tariff was not found.");
 
         if (!tariff.IsActive)
@@ -47,7 +47,7 @@ public sealed class CreditService(
             CreatedAt = createdAt
         };
 
-        await creditRepository.AddAsync(credit, operation);
+        await creditRepository.AddAsync(credit, operation, cancellationToken);
 
         logger.LogInformation(
             "Credit {CreditId} created for user {UserId} with amount {Amount}",
@@ -58,21 +58,21 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
-    public async Task<IReadOnlyList<CreditResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<CreditResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
         var credits = currentUserService.IsEmployee
-            ? await creditRepository.GetAllAsync()
-            : await creditRepository.GetByUserIdAsync(currentUserId);
+            ? await creditRepository.GetAllAsync(cancellationToken)
+            : await creditRepository.GetByUserIdAsync(currentUserId, cancellationToken);
 
         return credits
             .Select(MapToResponse)
             .ToList();
     }
 
-    public async Task<CreditResponse> GetByIdAsync(Guid id)
+    public async Task<CreditResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var credit = await creditRepository.GetByIdAsync(id)
+        var credit = await creditRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Credit was not found.");
 
         EnsureCanAccess(credit);
@@ -80,11 +80,14 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
-    public async Task<CreditResponse> RepayAsync(Guid id, RepayCreditRequest request)
+    public async Task<CreditResponse> RepayAsync(
+        Guid id,
+        RepayCreditRequest request,
+        CancellationToken cancellationToken)
     {
         ValidateAmount(request.Amount);
 
-        var credit = await creditRepository.GetByIdForUpdateAsync(id)
+        var credit = await creditRepository.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new NotFoundException("Credit was not found.");
 
         EnsureCanAccess(credit);
@@ -115,7 +118,7 @@ public sealed class CreditService(
                 Type = CreditOperationType.Repayment,
                 Amount = request.Amount,
                 CreatedAt = DateTimeOffset.UtcNow
-            });
+            }, cancellationToken);
         }
         catch (ConflictException exception)
         {
@@ -132,16 +135,20 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
-    public async Task<IReadOnlyList<CreditOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
+    public async Task<IReadOnlyList<CreditOperationResponse>> GetOperationsAsync(
+        Guid id,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         ValidatePagination(page, pageSize);
 
-        var credit = await creditRepository.GetByIdAsync(id)
+        var credit = await creditRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Credit was not found.");
 
         EnsureCanAccess(credit);
 
-        var operations = await creditRepository.GetOperationsAsync(id, page, pageSize);
+        var operations = await creditRepository.GetOperationsAsync(id, page, pageSize, cancellationToken);
 
         return operations
             .Select(MapToOperationResponse)

@@ -4,11 +4,14 @@ namespace CreditsService.Services;
 
 public interface ICreditTariffService
 {
-    Task<CreditTariffResponse> CreateAsync(CreateCreditTariffRequest request);
+    Task<CreditTariffResponse> CreateAsync(CreateCreditTariffRequest request, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<CreditTariffResponse>> GetAllAsync();
+    Task<IReadOnlyList<CreditTariffResponse>> GetAllAsync(CancellationToken cancellationToken);
 
-    Task<CreditTariffResponse> GetByIdAsync(Guid id);
+    Task<CreditTariffResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<CreditTariffResponse> UpdateAsync(Guid id, UpdateCreditTariffRequest request);
+    Task<CreditTariffResponse> UpdateAsync(
+        Guid id,
+        UpdateCreditTariffRequest request,
+        CancellationToken cancellationToken);
 }

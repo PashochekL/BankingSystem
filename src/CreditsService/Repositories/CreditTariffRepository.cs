@@ -6,36 +6,36 @@ namespace CreditsService.Repositories;
 
 public sealed class CreditTariffRepository(CreditsDbContext dbContext) : ICreditTariffRepository
 {
-    public async Task<CreditTariff?> GetByIdAsync(Guid id)
+    public async Task<CreditTariff?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await dbContext.CreditTariffs
             .AsNoTracking()
-            .FirstOrDefaultAsync(tariff => tariff.Id == id);
+            .FirstOrDefaultAsync(tariff => tariff.Id == id, cancellationToken);
     }
 
-    public async Task<CreditTariff?> GetByIdForUpdateAsync(Guid id)
+    public async Task<CreditTariff?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken)
     {
         return await dbContext.CreditTariffs
-            .FirstOrDefaultAsync(tariff => tariff.Id == id);
+            .FirstOrDefaultAsync(tariff => tariff.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<CreditTariff>> GetAllAsync()
+    public async Task<IReadOnlyList<CreditTariff>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await dbContext.CreditTariffs
             .AsNoTracking()
             .OrderBy(tariff => tariff.Name)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(CreditTariff tariff)
+    public async Task AddAsync(CreditTariff tariff, CancellationToken cancellationToken)
     {
-        await dbContext.CreditTariffs.AddAsync(tariff);
-        await dbContext.SaveChangesAsync();
+        await dbContext.CreditTariffs.AddAsync(tariff, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(CreditTariff tariff)
+    public async Task UpdateAsync(CreditTariff tariff, CancellationToken cancellationToken)
     {
         dbContext.CreditTariffs.Update(tariff);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

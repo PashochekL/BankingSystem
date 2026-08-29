@@ -9,25 +9,25 @@ namespace UsersService.Controllers;
 public sealed class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await authService.LoginAsync(request);
+        var response = await authService.LoginAsync(request, cancellationToken);
 
         return Ok(response);
     }
 
     [HttpPost("refresh")]
-    public async Task<ActionResult<LoginResponse>> Refresh(RefreshTokenRequest request)
+    public async Task<ActionResult<LoginResponse>> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var response = await authService.RefreshAsync(request);
+        var response = await authService.RefreshAsync(request, cancellationToken);
 
         return Ok(response);
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout(LogoutRequest request)
+    public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken cancellationToken)
     {
-        await authService.LogoutAsync(request);
+        await authService.LogoutAsync(request, cancellationToken);
 
         return NoContent();
     }

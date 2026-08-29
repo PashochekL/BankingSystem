@@ -9,7 +9,9 @@ public sealed class CreditTariffService(
     ICreditTariffRepository creditTariffRepository,
     ILogger<CreditTariffService> logger) : ICreditTariffService
 {
-    public async Task<CreditTariffResponse> CreateAsync(CreateCreditTariffRequest request)
+    public async Task<CreditTariffResponse> CreateAsync(
+        CreateCreditTariffRequest request,
+        CancellationToken cancellationToken)
     {
         ValidateName(request.Name);
         ValidateInterestRate(request.InterestRate);
@@ -23,33 +25,36 @@ public sealed class CreditTariffService(
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        await creditTariffRepository.AddAsync(tariff);
+        await creditTariffRepository.AddAsync(tariff, cancellationToken);
 
         logger.LogInformation("Credit tariff {CreditTariffId} created", tariff.Id);
 
         return MapToResponse(tariff);
     }
 
-    public async Task<IReadOnlyList<CreditTariffResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<CreditTariffResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var tariffs = await creditTariffRepository.GetAllAsync();
+        var tariffs = await creditTariffRepository.GetAllAsync(cancellationToken);
 
         return tariffs
             .Select(MapToResponse)
             .ToList();
     }
 
-    public async Task<CreditTariffResponse> GetByIdAsync(Guid id)
+    public async Task<CreditTariffResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var tariff = await creditTariffRepository.GetByIdForUpdateAsync(id)
+        var tariff = await creditTariffRepository.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new NotFoundException("Credit tariff was not found.");
 
         return MapToResponse(tariff);
     }
 
-    public async Task<CreditTariffResponse> UpdateAsync(Guid id, UpdateCreditTariffRequest request)
+    public async Task<CreditTariffResponse> UpdateAsync(
+        Guid id,
+        UpdateCreditTariffRequest request,
+        CancellationToken cancellationToken)
     {
-        var tariff = await creditTariffRepository.GetByIdAsync(id)
+        var tariff = await creditTariffRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Credit tariff was not found.");
 
         if (request.Name is not null)
@@ -69,7 +74,7 @@ public sealed class CreditTariffService(
             tariff.IsActive = request.IsActive.Value;
         }
 
-        await creditTariffRepository.UpdateAsync(tariff);
+        await creditTariffRepository.UpdateAsync(tariff, cancellationToken);
 
         logger.LogInformation("Credit tariff {CreditTariffId} updated", tariff.Id);
 

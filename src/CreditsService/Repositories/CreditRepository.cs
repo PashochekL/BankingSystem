@@ -7,34 +7,34 @@ namespace CreditsService.Repositories;
 
 public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditRepository
 {
-    public async Task<Credit?> GetByIdAsync(Guid id)
+    public async Task<Credit?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await dbContext.Credits
             .AsNoTracking()
-            .FirstOrDefaultAsync(credit => credit.Id == id);
+            .FirstOrDefaultAsync(credit => credit.Id == id, cancellationToken);
     }
 
-    public async Task<Credit?> GetByIdForUpdateAsync(Guid id)
+    public async Task<Credit?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken)
     {
         return await dbContext.Credits
-            .FirstOrDefaultAsync(credit => credit.Id == id);
+            .FirstOrDefaultAsync(credit => credit.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Credit>> GetAllAsync()
+    public async Task<IReadOnlyList<Credit>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await dbContext.Credits
             .AsNoTracking()
             .OrderBy(credit => credit.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Credit>> GetByUserIdAsync(Guid userId)
+    public async Task<IReadOnlyList<Credit>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await dbContext.Credits
             .AsNoTracking()
             .Where(credit => credit.UserId == userId)
             .OrderBy(credit => credit.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Credit>> GetActiveForInterestAccrualAsync(DateTimeOffset accrualBefore)
@@ -47,26 +47,30 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
             .ToListAsync();
     }
 
-    public async Task AddAsync(Credit credit, CreditOperation operation)
+    public async Task AddAsync(Credit credit, CreditOperation operation, CancellationToken cancellationToken)
     {
-        await dbContext.Credits.AddAsync(credit);
-        await dbContext.CreditOperations.AddAsync(operation);
-        await SaveChangesAsync();
+        await dbContext.Credits.AddAsync(credit, cancellationToken);
+        await dbContext.CreditOperations.AddAsync(operation, cancellationToken);
+        await SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Credit credit)
+    public async Task UpdateAsync(Credit credit, CancellationToken cancellationToken = default)
     {
         dbContext.Credits.Update(credit);
-        await SaveChangesAsync();
+        await SaveChangesAsync(cancellationToken);
     }
 
-    public async Task AddOperationAsync(CreditOperation operation)
+    public async Task AddOperationAsync(CreditOperation operation, CancellationToken cancellationToken = default)
     {
-        await dbContext.CreditOperations.AddAsync(operation);
-        await SaveChangesAsync();
+        await dbContext.CreditOperations.AddAsync(operation, cancellationToken);
+        await SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<CreditOperation>> GetOperationsAsync(Guid creditId, int page, int pageSize)
+    public async Task<IReadOnlyList<CreditOperation>> GetOperationsAsync(
+        Guid creditId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         return await dbContext.CreditOperations
             .AsNoTracking()
@@ -74,14 +78,14 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
             .OrderByDescending(operation => operation.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    private async Task SaveChangesAsync()
+    private async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         try
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

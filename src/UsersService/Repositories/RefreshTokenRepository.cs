@@ -6,22 +6,22 @@ namespace UsersService.Repositories;
 
 public sealed class RefreshTokenRepository(UsersDbContext dbContext) : IRefreshTokenRepository
 {
-    public async Task<RefreshToken?> GetByTokenHashAsync(string tokenHash)
+    public async Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken)
     {
         return await dbContext.RefreshTokens
             .Include(refreshToken => refreshToken.User)
-            .FirstOrDefaultAsync(refreshToken => refreshToken.TokenHash == tokenHash);
+            .FirstOrDefaultAsync(refreshToken => refreshToken.TokenHash == tokenHash, cancellationToken);
     }
 
-    public async Task AddAsync(RefreshToken refreshToken)
+    public async Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken)
     {
-        await dbContext.RefreshTokens.AddAsync(refreshToken);
-        await dbContext.SaveChangesAsync();
+        await dbContext.RefreshTokens.AddAsync(refreshToken, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(RefreshToken refreshToken)
+    public async Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken)
     {
         dbContext.RefreshTokens.Update(refreshToken);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

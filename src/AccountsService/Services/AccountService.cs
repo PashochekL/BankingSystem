@@ -10,7 +10,7 @@ public sealed class AccountService(
     ICurrentUserService currentUserService,
     ILogger<AccountService> logger) : IAccountService
 {
-    public async Task<AccountResponse> CreateAsync(CreateAccountRequest request)
+    public async Task<AccountResponse> CreateAsync(CreateAccountRequest request, CancellationToken cancellationToken)
     {
         ValidateName(request.Name);
 
@@ -29,28 +29,28 @@ public sealed class AccountService(
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        await accountRepository.AddAsync(account);
+        await accountRepository.AddAsync(account, cancellationToken);
 
         logger.LogInformation("Account {AccountId} created for user {UserId}", account.Id, account.UserId);
 
         return MapToResponse(account);
     }
 
-    public async Task<IReadOnlyList<AccountResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<AccountResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
         var accounts = currentUserService.IsEmployee
-            ? await accountRepository.GetAllAsync()
-            : await accountRepository.GetByUserIdAsync(currentUserId);
+            ? await accountRepository.GetAllAsync(cancellationToken)
+            : await accountRepository.GetByUserIdAsync(currentUserId, cancellationToken);
 
         return accounts
             .Select(MapToResponse)
             .ToList();
     }
 
-    public async Task<AccountResponse> GetByIdAsync(Guid id)
+    public async Task<AccountResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var account = await accountRepository.GetByIdAsync(id)
+        var account = await accountRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Account was not found.");
 
         EnsureCanAccess(account);
@@ -58,9 +58,9 @@ public sealed class AccountService(
         return MapToResponse(account);
     }
 
-    public async Task CloseAsync(Guid id)
+    public async Task CloseAsync(Guid id, CancellationToken cancellationToken)
     {
-        var account = await accountRepository.GetByIdForUpdateAsync(id)
+        var account = await accountRepository.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new NotFoundException("Account was not found.");
 
         EnsureCanAccess(account);
@@ -72,7 +72,7 @@ public sealed class AccountService(
 
             try
             {
-                await accountRepository.UpdateAsync(account);
+                await accountRepository.UpdateAsync(account, cancellationToken);
             }
             catch (ConflictException exception)
             {
@@ -84,11 +84,14 @@ public sealed class AccountService(
         }
     }
 
-    public async Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request)
+    public async Task<AccountResponse> DepositAsync(
+        Guid id,
+        AccountAmountRequest request,
+        CancellationToken cancellationToken)
     {
         ValidateAmount(request.Amount);
 
-        var account = await accountRepository.GetByIdForUpdateAsync(id)
+        var account = await accountRepository.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new NotFoundException("Account was not found.");
 
         EnsureCanAccess(account);
@@ -109,7 +112,7 @@ public sealed class AccountService(
                 Type = AccountOperationType.Deposit,
                 Amount = request.Amount,
                 CreatedAt = DateTimeOffset.UtcNow
-            });
+            }, cancellationToken);
         }
         catch (ConflictException exception)
         {
@@ -122,11 +125,14 @@ public sealed class AccountService(
         return MapToResponse(account);
     }
 
-    public async Task<AccountResponse> WithdrawAsync(Guid id, AccountAmountRequest request)
+    public async Task<AccountResponse> WithdrawAsync(
+        Guid id,
+        AccountAmountRequest request,
+        CancellationToken cancellationToken)
     {
         ValidateAmount(request.Amount);
 
-        var account = await accountRepository.GetByIdForUpdateAsync(id)
+        var account = await accountRepository.GetByIdForUpdateAsync(id, cancellationToken)
             ?? throw new NotFoundException("Account was not found.");
 
         EnsureCanAccess(account);
@@ -152,7 +158,7 @@ public sealed class AccountService(
                 Type = AccountOperationType.Withdraw,
                 Amount = request.Amount,
                 CreatedAt = DateTimeOffset.UtcNow
-            });
+            }, cancellationToken);
         }
         catch (ConflictException exception)
         {
@@ -165,16 +171,20 @@ public sealed class AccountService(
         return MapToResponse(account);
     }
 
-    public async Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize)
+    public async Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(
+        Guid id,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         ValidatePagination(page, pageSize);
 
-        var account = await accountRepository.GetByIdAsync(id)
+        var account = await accountRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("Account was not found.");
 
         EnsureCanAccess(account);
 
-        var operations = await accountRepository.GetOperationsAsync(id, page, pageSize);
+        var operations = await accountRepository.GetOperationsAsync(id, page, pageSize, cancellationToken);
 
         return operations
             .Select(MapToOperationResponse)

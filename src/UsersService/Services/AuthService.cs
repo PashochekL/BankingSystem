@@ -18,12 +18,12 @@ public sealed class AuthService(
     IOptions<JwtOptions> jwtOptions,
     ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         UserRequestValidation.ValidatePhone(request.Phone);
         UserRequestValidation.ValidateLoginPassword(request.Password);
 
-        var user = await userRepository.GetByPhoneAsync(request.Phone.Trim())
+        var user = await userRepository.GetByPhoneAsync(request.Phone.Trim(), cancellationToken)
             ?? throw new UnauthorizedException("Invalid phone or password.");
 
         if (user.IsBlocked)
@@ -44,19 +44,19 @@ public sealed class AuthService(
         }
 
         var accessToken = jwtService.GenerateAccessToken(user);
-        var refreshToken = await CreateRefreshTokenAsync(user);
+        var refreshToken = await CreateRefreshTokenAsync(user, cancellationToken);
 
         logger.LogInformation("User {UserId} logged in", user.Id);
 
         return new LoginResponse(user.Id, user.Phone, user.Role, accessToken, refreshToken);
     }
 
-    public async Task<LoginResponse> RefreshAsync(RefreshTokenRequest request)
+    public async Task<LoginResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         UserRequestValidation.ValidateRefreshToken(request.RefreshToken);
 
         var refreshTokenHash = HashRefreshToken(request.RefreshToken);
-        var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash)
+        var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash, cancellationToken)
             ?? throw new UnauthorizedException("Invalid refresh token.");
 
         if (savedRefreshToken.RevokedAt is not null || savedRefreshToken.ExpiresAt <= DateTimeOffset.UtcNow)
@@ -70,10 +70,10 @@ public sealed class AuthService(
         }
 
         savedRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
-        await refreshTokenRepository.UpdateAsync(savedRefreshToken);
+        await refreshTokenRepository.UpdateAsync(savedRefreshToken, cancellationToken);
 
         var accessToken = jwtService.GenerateAccessToken(savedRefreshToken.User);
-        var newRefreshToken = await CreateRefreshTokenAsync(savedRefreshToken.User);
+        var newRefreshToken = await CreateRefreshTokenAsync(savedRefreshToken.User, cancellationToken);
 
         logger.LogInformation("Refresh session rotated for user {UserId}", savedRefreshToken.UserId);
 
@@ -85,24 +85,24 @@ public sealed class AuthService(
             newRefreshToken);
     }
 
-    public async Task LogoutAsync(LogoutRequest request)
+    public async Task LogoutAsync(LogoutRequest request, CancellationToken cancellationToken)
     {
         UserRequestValidation.ValidateRefreshToken(request.RefreshToken);
 
         var refreshTokenHash = HashRefreshToken(request.RefreshToken);
-        var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash)
+        var savedRefreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenHash, cancellationToken)
             ?? throw new UnauthorizedException("Invalid refresh token.");
 
         if (savedRefreshToken.RevokedAt is null)
         {
             savedRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
-            await refreshTokenRepository.UpdateAsync(savedRefreshToken);
+            await refreshTokenRepository.UpdateAsync(savedRefreshToken, cancellationToken);
 
             logger.LogInformation("Refresh session revoked for user {UserId}", savedRefreshToken.UserId);
         }
     }
 
-    private async Task<string> CreateRefreshTokenAsync(User user)
+    private async Task<string> CreateRefreshTokenAsync(User user, CancellationToken cancellationToken)
     {
         var refreshToken = GenerateRefreshToken();
         var now = DateTimeOffset.UtcNow;
@@ -114,7 +114,7 @@ public sealed class AuthService(
             TokenHash = HashRefreshToken(refreshToken),
             ExpiresAt = now.AddDays(jwtOptions.Value.RefreshTokenExpirationDays),
             CreatedAt = now
-        });
+        }, cancellationToken);
 
         return refreshToken;
     }

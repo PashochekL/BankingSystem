@@ -11,7 +11,7 @@ public sealed class UserService(
     IPasswordHasher<User> passwordHasher,
     ILogger<UserService> logger) : IUserService
 {
-    public async Task<UserResponse> CreateAsync(CreateUserRequest request)
+    public async Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken)
     {
         UserRequestValidation.ValidateName(request.FirstName, "First name");
         UserRequestValidation.ValidateName(request.LastName, "Last name");
@@ -20,7 +20,7 @@ public sealed class UserService(
         UserRequestValidation.ValidateRole(request.Role);
 
         var phone = request.Phone.Trim();
-        var existingUser = await userRepository.GetByPhoneAsync(phone);
+        var existingUser = await userRepository.GetByPhoneAsync(phone, cancellationToken);
         if (existingUser is not null)
         {
             throw new ConflictException("User with this phone already exists.");
@@ -39,37 +39,37 @@ public sealed class UserService(
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
-        await userRepository.AddAsync(user);
+        await userRepository.AddAsync(user, cancellationToken);
 
         logger.LogInformation("User {UserId} created with role {Role}", user.Id, user.Role);
 
         return MapToResponse(user);
     }
 
-    public async Task<UserResponse> GetByIdAsync(Guid id)
+    public async Task<UserResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByIdAsync(id)
+        var user = await userRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("User was not found.");
 
         return MapToResponse(user);
     }
 
-    public async Task<IReadOnlyList<UserResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<UserResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var users = await userRepository.GetAllAsync();
+        var users = await userRepository.GetAllAsync(cancellationToken);
 
         return users
             .Select(MapToResponse)
             .ToList();
     }
 
-    public async Task BlockAsync(Guid id)
+    public async Task BlockAsync(Guid id, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByIdAsync(id)
+        var user = await userRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("User was not found.");
 
         user.IsBlocked = true;
-        await userRepository.UpdateAsync(user);
+        await userRepository.UpdateAsync(user, cancellationToken);
 
         logger.LogInformation("User {UserId} blocked", user.Id);
     }

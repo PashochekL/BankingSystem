@@ -4,17 +4,21 @@ namespace AccountsService.Services;
 
 public interface IAccountService
 {
-    Task<AccountResponse> CreateAsync(CreateAccountRequest request);
+    Task<AccountResponse> CreateAsync(CreateAccountRequest request, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<AccountResponse>> GetAllAsync();
+    Task<IReadOnlyList<AccountResponse>> GetAllAsync(CancellationToken cancellationToken);
 
-    Task<AccountResponse> GetByIdAsync(Guid id);
+    Task<AccountResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task CloseAsync(Guid id);
+    Task CloseAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request);
+    Task<AccountResponse> DepositAsync(Guid id, AccountAmountRequest request, CancellationToken cancellationToken);
 
-    Task<AccountResponse> WithdrawAsync(Guid id, AccountAmountRequest request);
+    Task<AccountResponse> WithdrawAsync(Guid id, AccountAmountRequest request, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(Guid id, int page, int pageSize);
+    Task<IReadOnlyList<AccountOperationResponse>> GetOperationsAsync(
+        Guid id,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
 }

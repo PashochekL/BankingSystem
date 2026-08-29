@@ -42,6 +42,7 @@ public sealed class ExceptionHandlingMiddleware(
             ValidationException => StatusCodes.Status400BadRequest,
             UnauthorizedException => StatusCodes.Status401Unauthorized,
             NotFoundException => StatusCodes.Status404NotFound,
+            ForbiddenException => StatusCodes.Status403Forbidden,
             DbUpdateConcurrencyException => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status500InternalServerError
         };
@@ -51,6 +52,7 @@ public sealed class ExceptionHandlingMiddleware(
             ValidationException => "Validation failed",
             UnauthorizedException => "Unauthorized",
             NotFoundException => "Resource not found",
+            ForbiddenException => "Forbidden",
             DbUpdateConcurrencyException => "Conflict",
             _ => "Unexpected error"
         };

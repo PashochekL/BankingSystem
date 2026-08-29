@@ -17,4 +17,20 @@ public sealed class CreditsController(ICreditService creditService) : Controller
 
         return Created($"/api/credits/{credit.Id}", credit);
     }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<CreditResponse>>> GetAll()
+    {
+        var credits = await creditService.GetAllAsync();
+
+        return Ok(credits);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<CreditResponse>> GetById(Guid id)
+    {
+        var credit = await creditService.GetByIdAsync(id);
+
+        return Ok(credit);
+    }
 }

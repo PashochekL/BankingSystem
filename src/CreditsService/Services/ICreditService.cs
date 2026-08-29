@@ -5,4 +5,8 @@ namespace CreditsService.Services;
 public interface ICreditService
 {
     Task<CreditResponse> CreateAsync(CreateCreditRequest request);
+
+    Task<IReadOnlyList<CreditResponse>> GetAllAsync();
+
+    Task<CreditResponse> GetByIdAsync(Guid id);
 }

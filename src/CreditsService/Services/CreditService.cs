@@ -54,6 +54,28 @@ public sealed class CreditService(
         return MapToResponse(credit);
     }
 
+    public async Task<IReadOnlyList<CreditResponse>> GetAllAsync()
+    {
+        var currentUserId = GetCurrentUserId();
+        var credits = currentUserService.IsEmployee
+            ? await creditRepository.GetAllAsync()
+            : await creditRepository.GetByUserIdAsync(currentUserId);
+
+        return credits
+            .Select(MapToResponse)
+            .ToList();
+    }
+
+    public async Task<CreditResponse> GetByIdAsync(Guid id)
+    {
+        var credit = await creditRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException("Credit was not found.");
+
+        EnsureCanAccess(credit);
+
+        return MapToResponse(credit);
+    }
+
     private Guid GetCurrentUserId()
     {
         if (!currentUserService.IsAuthenticated || currentUserService.UserId is not { } userId)
@@ -62,6 +84,15 @@ public sealed class CreditService(
         }
 
         return userId;
+    }
+
+    private void EnsureCanAccess(Credit credit)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (!currentUserService.IsEmployee && credit.UserId != currentUserId)
+        {
+            throw new ForbiddenException("Credit access is forbidden.");
+        }
     }
 
     private static CreditResponse MapToResponse(Credit credit)

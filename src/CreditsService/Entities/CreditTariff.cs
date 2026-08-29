@@ -11,4 +11,6 @@ public sealed class CreditTariff
     public bool IsActive { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public List<Credit> Credits { get; set; } = [];
 }

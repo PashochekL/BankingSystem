@@ -7,7 +7,8 @@ namespace AccountsService.Services;
 
 public sealed class AccountService(
     IAccountRepository accountRepository,
-    ICurrentUserService currentUserService) : IAccountService
+    ICurrentUserService currentUserService,
+    ILogger<AccountService> logger) : IAccountService
 {
     public async Task<AccountResponse> CreateAsync(CreateAccountRequest request)
     {
@@ -29,6 +30,8 @@ public sealed class AccountService(
         };
 
         await accountRepository.AddAsync(account);
+
+        logger.LogInformation("Account {AccountId} created for user {UserId}", account.Id, account.UserId);
 
         return MapToResponse(account);
     }
@@ -66,7 +69,18 @@ public sealed class AccountService(
         {
             account.IsClosed = true;
             account.ClosedAt = DateTimeOffset.UtcNow;
-            await accountRepository.UpdateAsync(account);
+
+            try
+            {
+                await accountRepository.UpdateAsync(account);
+            }
+            catch (ConflictException exception)
+            {
+                logger.LogWarning(exception, "Account {AccountId} close conflict", account.Id);
+                throw;
+            }
+
+            logger.LogInformation("Account {AccountId} closed", account.Id);
         }
     }
 
@@ -86,14 +100,24 @@ public sealed class AccountService(
 
         account.Balance += request.Amount;
 
-        await accountRepository.AddOperationAsync(new AccountOperation
+        try
         {
-            Id = Guid.NewGuid(),
-            AccountId = account.Id,
-            Type = AccountOperationType.Deposit,
-            Amount = request.Amount,
-            CreatedAt = DateTimeOffset.UtcNow
-        });
+            await accountRepository.AddOperationAsync(new AccountOperation
+            {
+                Id = Guid.NewGuid(),
+                AccountId = account.Id,
+                Type = AccountOperationType.Deposit,
+                Amount = request.Amount,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+        catch (ConflictException exception)
+        {
+            logger.LogWarning(exception, "Account {AccountId} deposit conflict for amount {Amount}", account.Id, request.Amount);
+            throw;
+        }
+
+        logger.LogInformation("Account {AccountId} deposited by {Amount}", account.Id, request.Amount);
 
         return MapToResponse(account);
     }
@@ -119,14 +143,24 @@ public sealed class AccountService(
 
         account.Balance -= request.Amount;
 
-        await accountRepository.AddOperationAsync(new AccountOperation
+        try
         {
-            Id = Guid.NewGuid(),
-            AccountId = account.Id,
-            Type = AccountOperationType.Withdraw,
-            Amount = request.Amount,
-            CreatedAt = DateTimeOffset.UtcNow
-        });
+            await accountRepository.AddOperationAsync(new AccountOperation
+            {
+                Id = Guid.NewGuid(),
+                AccountId = account.Id,
+                Type = AccountOperationType.Withdraw,
+                Amount = request.Amount,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+        catch (ConflictException exception)
+        {
+            logger.LogWarning(exception, "Account {AccountId} withdraw conflict for amount {Amount}", account.Id, request.Amount);
+            throw;
+        }
+
+        logger.LogInformation("Account {AccountId} withdrawn by {Amount}", account.Id, request.Amount);
 
         return MapToResponse(account);
     }

@@ -8,7 +8,8 @@ namespace CreditsService.Services;
 public sealed class CreditService(
     ICreditRepository creditRepository,
     ICreditTariffRepository creditTariffRepository,
-    ICurrentUserService currentUserService) : ICreditService
+    ICurrentUserService currentUserService,
+    ILogger<CreditService> logger) : ICreditService
 {
     public async Task<CreditResponse> CreateAsync(CreateCreditRequest request)
     {
@@ -47,6 +48,12 @@ public sealed class CreditService(
         };
 
         await creditRepository.AddAsync(credit, operation);
+
+        logger.LogInformation(
+            "Credit {CreditId} created for user {UserId} with amount {Amount}",
+            credit.Id,
+            credit.UserId,
+            credit.InitialAmount);
 
         return MapToResponse(credit);
     }
@@ -99,14 +106,28 @@ public sealed class CreditService(
             credit.Status = CreditStatus.Paid;
         }
 
-        await creditRepository.AddOperationAsync(new CreditOperation
+        try
         {
-            Id = Guid.NewGuid(),
-            CreditId = credit.Id,
-            Type = CreditOperationType.Repayment,
-            Amount = request.Amount,
-            CreatedAt = DateTimeOffset.UtcNow
-        });
+            await creditRepository.AddOperationAsync(new CreditOperation
+            {
+                Id = Guid.NewGuid(),
+                CreditId = credit.Id,
+                Type = CreditOperationType.Repayment,
+                Amount = request.Amount,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+        catch (ConflictException exception)
+        {
+            logger.LogWarning(exception, "Credit {CreditId} repayment conflict for amount {Amount}", credit.Id, request.Amount);
+            throw;
+        }
+
+        logger.LogInformation(
+            "Credit {CreditId} repaid by {Amount}; remaining amount is {RemainingAmount}",
+            credit.Id,
+            request.Amount,
+            credit.RemainingAmount);
 
         return MapToResponse(credit);
     }

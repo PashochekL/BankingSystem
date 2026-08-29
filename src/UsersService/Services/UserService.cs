@@ -8,7 +8,8 @@ namespace UsersService.Services;
 
 public sealed class UserService(
     IUserRepository userRepository,
-    IPasswordHasher<User> passwordHasher) : IUserService
+    IPasswordHasher<User> passwordHasher,
+    ILogger<UserService> logger) : IUserService
 {
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
@@ -40,6 +41,8 @@ public sealed class UserService(
 
         await userRepository.AddAsync(user);
 
+        logger.LogInformation("User {UserId} created with role {Role}", user.Id, user.Role);
+
         return MapToResponse(user);
     }
 
@@ -67,6 +70,8 @@ public sealed class UserService(
 
         user.IsBlocked = true;
         await userRepository.UpdateAsync(user);
+
+        logger.LogInformation("User {UserId} blocked", user.Id);
     }
 
     private static UserResponse MapToResponse(User user)

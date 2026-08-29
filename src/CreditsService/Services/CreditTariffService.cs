@@ -5,7 +5,9 @@ using CreditsService.Repositories;
 
 namespace CreditsService.Services;
 
-public sealed class CreditTariffService(ICreditTariffRepository creditTariffRepository) : ICreditTariffService
+public sealed class CreditTariffService(
+    ICreditTariffRepository creditTariffRepository,
+    ILogger<CreditTariffService> logger) : ICreditTariffService
 {
     public async Task<CreditTariffResponse> CreateAsync(CreateCreditTariffRequest request)
     {
@@ -22,6 +24,8 @@ public sealed class CreditTariffService(ICreditTariffRepository creditTariffRepo
         };
 
         await creditTariffRepository.AddAsync(tariff);
+
+        logger.LogInformation("Credit tariff {CreditTariffId} created", tariff.Id);
 
         return MapToResponse(tariff);
     }
@@ -66,6 +70,8 @@ public sealed class CreditTariffService(ICreditTariffRepository creditTariffRepo
         }
 
         await creditTariffRepository.UpdateAsync(tariff);
+
+        logger.LogInformation("Credit tariff {CreditTariffId} updated", tariff.Id);
 
         return MapToResponse(tariff);
     }

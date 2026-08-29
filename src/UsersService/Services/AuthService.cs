@@ -15,7 +15,8 @@ public sealed class AuthService(
     IRefreshTokenRepository refreshTokenRepository,
     IPasswordHasher<User> passwordHasher,
     IJwtService jwtService,
-    IOptions<JwtOptions> jwtOptions) : IAuthService
+    IOptions<JwtOptions> jwtOptions,
+    ILogger<AuthService> logger) : IAuthService
 {
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
@@ -27,6 +28,7 @@ public sealed class AuthService(
 
         if (user.IsBlocked)
         {
+            logger.LogWarning("Blocked user {UserId} attempted to log in", user.Id);
             throw new ForbiddenException("User is blocked.");
         }
 
@@ -37,11 +39,14 @@ public sealed class AuthService(
 
         if (verificationResult == PasswordVerificationResult.Failed)
         {
+            logger.LogWarning("Login failed for user {UserId}", user.Id);
             throw new UnauthorizedException("Invalid phone or password.");
         }
 
         var accessToken = jwtService.GenerateAccessToken(user);
         var refreshToken = await CreateRefreshTokenAsync(user);
+
+        logger.LogInformation("User {UserId} logged in", user.Id);
 
         return new LoginResponse(user.Id, user.Phone, user.Role, accessToken, refreshToken);
     }
@@ -70,6 +75,8 @@ public sealed class AuthService(
         var accessToken = jwtService.GenerateAccessToken(savedRefreshToken.User);
         var newRefreshToken = await CreateRefreshTokenAsync(savedRefreshToken.User);
 
+        logger.LogInformation("Refresh session rotated for user {UserId}", savedRefreshToken.UserId);
+
         return new LoginResponse(
             savedRefreshToken.User.Id,
             savedRefreshToken.User.Phone,
@@ -90,6 +97,8 @@ public sealed class AuthService(
         {
             savedRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
             await refreshTokenRepository.UpdateAsync(savedRefreshToken);
+
+            logger.LogInformation("Refresh session revoked for user {UserId}", savedRefreshToken.UserId);
         }
     }
 

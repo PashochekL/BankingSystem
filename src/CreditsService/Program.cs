@@ -87,4 +87,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+RecurringJob.AddOrUpdate<IInterestAccrualJob>(
+    "interest-accrual",
+    job => job.RunAsync(),
+    Cron.Daily);
+
 app.Run();

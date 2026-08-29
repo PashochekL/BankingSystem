@@ -12,6 +12,8 @@ public interface ICreditRepository
 
     Task<IReadOnlyList<Credit>> GetByUserIdAsync(Guid userId);
 
+    Task<IReadOnlyList<Credit>> GetActiveForInterestAccrualAsync(DateTimeOffset accrualBefore);
+
     Task AddAsync(Credit credit, CreditOperation operation);
 
     Task AddOperationAsync(CreditOperation operation);

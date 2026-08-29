@@ -36,6 +36,16 @@ public sealed class CreditRepository(CreditsDbContext dbContext) : ICreditReposi
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Credit>> GetActiveForInterestAccrualAsync(DateTimeOffset accrualBefore)
+    {
+        return await dbContext.Credits
+            .Where(credit =>
+                credit.Status == CreditStatus.Active &&
+                credit.LastInterestAccrualAt < accrualBefore)
+            .OrderBy(credit => credit.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Credit credit, CreditOperation operation)
     {
         await dbContext.Credits.AddAsync(credit);

@@ -23,6 +23,19 @@ services:
     volumes:
       - accounts-db-data:/var/lib/postgresql/data
 
+  credits-db:
+    image: postgres:16
+    container_name: krutobank-credits-db
+    environment:
+      POSTGRES_DB: kruto_credits
+      POSTGRES_USER: kruto_credits
+      POSTGRES_PASSWORD: kruto_credits_password
+    ports:
+      - "54323:5432"
+    volumes:
+      - credits-db-data:/var/lib/postgresql/data
+
 volumes:
   users-db-data:
   accounts-db-data:
+  credits-db-data:

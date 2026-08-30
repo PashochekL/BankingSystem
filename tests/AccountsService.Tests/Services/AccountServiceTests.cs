@@ -281,7 +281,7 @@ public sealed class AccountServiceTests
     }
 
     [Fact]
-    public async Task CloseAsync_WithExistingAccount_ClosesAccount()
+    public async Task CloseAsync_WithZeroBalanceAccount_ClosesAccount()
     {
         ConfigureCurrentUser(currentUserId);
         var account = CreateAccount(currentUserId);
@@ -301,6 +301,27 @@ public sealed class AccountServiceTests
         accountRepository.Verify(
             repository => repository.UpdateAsync(account, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task CloseAsync_WithPositiveBalanceAccount_ThrowsValidationException()
+    {
+        ConfigureCurrentUser(currentUserId);
+        var account = CreateAccount(currentUserId, balance: 100m);
+        accountRepository
+            .Setup(repository => repository.GetByIdForUpdateAsync(account.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(account);
+
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            service.CloseAsync(account.Id, CancellationToken.None));
+
+        Assert.False(account.IsClosed);
+        Assert.Null(account.ClosedAt);
+        accountRepository.Verify(
+            repository => repository.UpdateAsync(It.IsAny<Account>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

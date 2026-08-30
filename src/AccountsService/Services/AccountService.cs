@@ -67,6 +67,11 @@ public sealed class AccountService(
 
         if (!account.IsClosed)
         {
+            if (account.Balance != 0)
+            {
+                throw new ValidationException("Account balance must be zero before closing.");
+            }
+
             account.IsClosed = true;
             account.ClosedAt = DateTimeOffset.UtcNow;
 

@@ -16,7 +16,7 @@ public sealed class CreditServiceTests
     private readonly Mock<ICurrentUserService> currentUserService = new();
 
     [Fact]
-    public async Task CreateAsync_WithValidRequest_CreatesCreditAndCreationOperation()
+    public async Task CreateAsync_WithClient_CreatesCreditAndCreationOperation()
     {
         ConfigureCurrentUser(currentUserId);
         var tariff = CreateTariff(isActive: true);
@@ -51,6 +51,23 @@ public sealed class CreditServiceTests
         Assert.Equal(response.Id, addedOperation.CreditId);
         Assert.Equal(CreditOperationType.Creation, addedOperation.Type);
         Assert.Equal(1000m, addedOperation.Amount);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithEmployee_ThrowsForbiddenException()
+    {
+        ConfigureCurrentUser(currentUserId, isEmployee: true);
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.CreateAsync(new CreateCreditRequest(Guid.NewGuid(), 1000m), CancellationToken.None));
+
+        creditTariffRepository.Verify(
+            repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        creditRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<Credit>(), It.IsAny<CreditOperation>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

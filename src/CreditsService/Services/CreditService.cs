@@ -16,6 +16,11 @@ public sealed class CreditService(
         ValidateAmount(request.Amount);
 
         var currentUserId = GetCurrentUserId();
+        if (currentUserService.IsEmployee)
+        {
+            throw new ForbiddenException("Only clients can create credits.");
+        }
+
         var tariff = await creditTariffRepository.GetByIdAsync(request.TariffId, cancellationToken)
             ?? throw new NotFoundException("Credit tariff was not found.");
 

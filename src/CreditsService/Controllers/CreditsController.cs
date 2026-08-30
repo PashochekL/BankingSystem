@@ -11,6 +11,7 @@ namespace CreditsService.Controllers;
 public sealed class CreditsController(ICreditService creditService) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = "Client")]
     public async Task<ActionResult<CreditResponse>> Create(CreateCreditRequest request, CancellationToken cancellationToken)
     {
         var credit = await creditService.CreateAsync(request, cancellationToken);

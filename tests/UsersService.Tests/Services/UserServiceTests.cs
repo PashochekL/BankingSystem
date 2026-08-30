@@ -14,6 +14,7 @@ public sealed class UserServiceTests
     private const string Password = "StrongPassword123!";
 
     private readonly Mock<IUserRepository> userRepository = new();
+    private readonly Mock<ICurrentUserService> currentUserService = new();
     private readonly PasswordHasher<User> passwordHasher = new();
 
     [Fact]
@@ -82,9 +83,10 @@ public sealed class UserServiceTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_WithExistingUser_ReturnsUser()
+    public async Task GetByIdAsync_WithClientOwnUser_ReturnsUser()
     {
         var user = CreateUser();
+        ConfigureCurrentUser(user.Id, UserRole.Client);
         userRepository
             .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -102,9 +104,43 @@ public sealed class UserServiceTests
     }
 
     [Fact]
+    public async Task GetByIdAsync_WithClientAnotherUser_ThrowsForbiddenException()
+    {
+        var user = CreateUser();
+        ConfigureCurrentUser(Guid.NewGuid(), UserRole.Client);
+
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.GetByIdAsync(user.Id, CancellationToken.None));
+
+        userRepository.Verify(
+            repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WithEmployeeAnotherUser_ReturnsUser()
+    {
+        var user = CreateUser();
+        ConfigureCurrentUser(Guid.NewGuid(), UserRole.Employee);
+        userRepository
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var service = CreateService();
+
+        var response = await service.GetByIdAsync(user.Id, CancellationToken.None);
+
+        Assert.Equal(user.Id, response.Id);
+        Assert.Equal(user.Phone, response.Phone);
+    }
+
+    [Fact]
     public async Task GetByIdAsync_WhenUserNotFound_ThrowsNotFoundException()
     {
         var userId = Guid.NewGuid();
+        ConfigureCurrentUser(userId, UserRole.Client);
         userRepository
             .Setup(repository => repository.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
@@ -159,7 +195,15 @@ public sealed class UserServiceTests
         return new UserService(
             userRepository.Object,
             passwordHasher,
+            currentUserService.Object,
             NullLogger<UserService>.Instance);
+    }
+
+    private void ConfigureCurrentUser(Guid userId, UserRole role)
+    {
+        currentUserService.Setup(service => service.UserId).Returns(userId);
+        currentUserService.Setup(service => service.Role).Returns(role);
+        currentUserService.Setup(service => service.IsAuthenticated).Returns(true);
     }
 
     private static User CreateUser()

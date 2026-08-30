@@ -75,6 +75,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<CreditsDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -91,7 +97,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
-RecurringJob.AddOrUpdate<IInterestAccrualJob>(
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobManager.AddOrUpdate<IInterestAccrualJob>(
     "interest-accrual",
     job => job.RunAsync(),
     Cron.Daily);

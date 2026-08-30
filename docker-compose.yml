@@ -1,4 +1,78 @@
 services:
+  users-service:
+    build:
+      context: .
+      dockerfile: src/UsersService/Dockerfile
+    container_name: krutobank-users-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__UsersDb: Host=users-db;Port=5432;Database=kruto_users;Username=kruto_users;Password=kruto_users_password
+      Jwt__Secret: local-development-jwt-secret-local-development-jwt-secret
+      Jwt__Issuer: KrutoBank.UsersService
+      Jwt__Audience: KrutoBank.Api
+      Jwt__AccessTokenExpirationMinutes: 15
+      Jwt__RefreshTokenExpirationDays: 30
+    ports:
+      - "5257:8080"
+    depends_on:
+      users-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  accounts-service:
+    build:
+      context: .
+      dockerfile: src/AccountsService/Dockerfile
+    container_name: krutobank-accounts-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AccountsDb: Host=accounts-db;Port=5432;Database=kruto_accounts;Username=kruto_accounts;Password=kruto_accounts_password
+      Jwt__Secret: local-development-jwt-secret-local-development-jwt-secret
+      Jwt__Issuer: KrutoBank.UsersService
+      Jwt__Audience: KrutoBank.Api
+    ports:
+      - "5066:8080"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  credits-service:
+    build:
+      context: .
+      dockerfile: src/CreditsService/Dockerfile
+    container_name: krutobank-credits-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__CreditsDb: Host=credits-db;Port=5432;Database=kruto_credits;Username=kruto_credits;Password=kruto_credits_password
+      ConnectionStrings__HangfireDb: Host=hangfire-db;Port=5432;Database=kruto_hangfire;Username=kruto_hangfire;Password=kruto_hangfire_password
+      Jwt__Secret: local-development-jwt-secret-local-development-jwt-secret
+      Jwt__Issuer: KrutoBank.UsersService
+      Jwt__Audience: KrutoBank.Api
+    ports:
+      - "5239:8080"
+    depends_on:
+      credits-db:
+        condition: service_healthy
+      hangfire-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   users-db:
     image: postgres:16
     container_name: krutobank-users-db
@@ -10,6 +84,11 @@ services:
       - "54321:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kruto_users -d kruto_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   accounts-db:
     image: postgres:16
@@ -22,6 +101,11 @@ services:
       - "54322:5432"
     volumes:
       - accounts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kruto_accounts -d kruto_accounts"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   credits-db:
     image: postgres:16
@@ -34,6 +118,11 @@ services:
       - "54323:5432"
     volumes:
       - credits-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kruto_credits -d kruto_credits"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   hangfire-db:
     image: postgres:16
@@ -46,6 +135,11 @@ services:
       - "54324:5432"
     volumes:
       - hangfire-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kruto_hangfire -d kruto_hangfire"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   users-db-data:

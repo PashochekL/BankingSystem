@@ -152,9 +152,10 @@ public sealed class UserServiceTests
     }
 
     [Fact]
-    public async Task BlockAsync_WithExistingUser_BlocksUser()
+    public async Task BlockAsync_WithEmployeeBlockingAnotherUser_BlocksUser()
     {
         var user = CreateUser();
+        ConfigureCurrentUser(Guid.NewGuid(), UserRole.Employee);
         userRepository
             .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -170,6 +171,26 @@ public sealed class UserServiceTests
         userRepository.Verify(
             repository => repository.UpdateAsync(user, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task BlockAsync_WithEmployeeBlockingSelf_ThrowsForbiddenException()
+    {
+        var user = CreateUser();
+        ConfigureCurrentUser(user.Id, UserRole.Employee);
+        userRepository
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            service.BlockAsync(user.Id, CancellationToken.None));
+
+        Assert.False(user.IsBlocked);
+        userRepository.Verify(
+            repository => repository.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

@@ -71,6 +71,11 @@ public sealed class UserService(
         var user = await userRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("User was not found.");
 
+        if (currentUserService.UserId == id)
+        {
+            throw new ForbiddenException("User cannot block himself.");
+        }
+
         user.IsBlocked = true;
         await userRepository.UpdateAsync(user, cancellationToken);
 
